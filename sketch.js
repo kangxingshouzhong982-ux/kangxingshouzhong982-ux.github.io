@@ -1,128 +1,100 @@
+// --- 物理パラメータ ---
+let m = 1.0;
+let k = 1.0;
+let v0 = 1.0;
+let L = 1.0;
 
-// ==== 物理パラメータ ====
-let m = 1;
-let k = 1;
-let v0 = 1;
-let L = 150;  // バネ自然長（px）
+let omega = Math.sqrt(2 * k / m);
 
-// ==== シミュレーション用 ==
 let t = 0;
-let dt = 0.02;
+let dt = 0.05;
 
-// ==== グラフ描画用 ====
-let graph = [];
-let graphMaxLength = 800;
+let x1_list = [];
+let x2_list = [];
+let t_list = [];
 
-// ==== 質点の運動 x1(t), x2(t) ====
-function x1(t){
-    let A = 0.5 * v0 * Math.sqrt(m/(2*k));
-    let w = Math.sqrt(2*k/m);
-    return 200 + A * Math.sin(w*t) + 0.5*v0*t*50;
+function x1(t) {
+  return 0.5 * v0 * Math.sqrt(m/(2*k)) * Math.sin(omega*t) + 0.5*v0*t;
 }
 
-function x2(t){
-    let A = 0.5 * v0 * Math.sqrt(m/(2*k));
-    let w = Math.sqrt(2*k/m);
-    return 200 + L + (-A * Math.sin(w*t) + 0.5*v0*t*50);
+function x2(t) {
+  return -0.5 * v0 * Math.sqrt(m/(2*k)) * Math.sin(omega*t) + 0.5*v0*t + L;
 }
 
-
-// ===============================
-// p5.js メイン
-// ================================
-function setup(){
-    createCanvas(800, 600);  // 上：アニメ、 下：グラフ
-}
-
-function draw(){
-    background(250);
-
-    // 現在の位置
-    let p1 = x1(t);
-    let p2 = x2(t);
-
-    // グラフデータ保存
-    graph.push({x1: p1, x2: p2});
-    if(graph.length > graphMaxLength) graph.shift();
-
-    // --- 上半分：バネと質点の描画 ---
-    translate(0, 100);
-    drawSimulation(p1, p2);
-
-    // --- 下半分：グラフ ---
-    translate(0, 250);
-    drawGraph();
-
-    t += dt;
-}
-
-
-
-// ===============================
-// バネと質点の描画
-// ===============================
-function drawSimulation(p1, p2){
-    stroke(0);
-    strokeWeight(2);
-
-    // 地面の水平線（基準軸）
-    line(0, 50, width, 50);
-
-    // バネ
-    line(p1, 50, p2, 50);
-
-    // 質点1
-    fill(80, 80, 255);
-    circle(p1, 50, 20);
-    textSize(16);
-    fill(0);
-    text("x₁", p1 - 5, 75);
-
-    // 質点2
-    fill(255, 80, 80);
-    circle(p2, 50, 20);
-    fill(0);
-    text("x₂", p2 - 5, 75);
-}
-
-
-
-// ===============================
-// グラフ描画
-// ===============================
-function drawGraph(){
-    stroke(0);
-    strokeWeight(1);
-    line(0, 0, width, 0);    // x 軸
-
-    // グラフの範囲を調整
-    let minY = 150;
-    let maxY = 450;
-
-    noFill();
-
-    // x1(t) の線
-    stroke(0, 0, 255);
-    beginShape();
-    for(let i=0;i<graph.length;i++){
-        let y = map(graph[i].x1, 100, 500, maxY, minY);
-        vertex(i, y);
+// --- バネをジグザグで描く ---
+function drawSpring(x_start, x_end, n=20, amp=15) {
+  let xs = [];
+  let ys = [];
+  for (let i = 0; i <= n; i++) {
+    let xi = map(i, 0, n, x_start, x_end);
+    let yi = 0;
+    if (i != 0 && i != n) {
+      yi = amp * ((i % 2) * 2 - 1);
     }
-    endShape();
+    xs.push(xi);
+    ys.push(yi);
+  }
+  noFill();
+  beginShape();
+  for (let i = 0; i < xs.length; i++) {
+    vertex(xs[i], ys[i]);
+  }
+  endShape();
+}
 
-    // x2(t) の線
-    stroke(255, 0, 0);
-    beginShape();
-    for(let i=0;i<graph.length;i++){
-        let y = map(graph[i].x2, 100, 500, maxY, minY);
-        vertex(i, y);
-    }
-    endShape();
+function setup() {
+  createCanvas(800, 400);
+}
 
-    // 凡例
-    fill(0,0,255); noStroke();
-    text("x₁(t)", 10, -20);
-
-    fill(255,0,0);
-    text("x₂(t)", 60, -20);
+function draw() {
+  background(255);
+  
+  // 上段：バネ＋小球
+  push();
+  translate(50, 150);
+  let p1 = x1(t);
+  let p2 = x2(t);
+  
+  // 小球
+  fill(255,0,0);
+  ellipse(p1*50, 0, 20, 20);
+  fill(0,0,255);
+  ellipse(p2*50, 0, 20, 20);
+  
+  // ラベル
+  fill(0);
+  textAlign(CENTER);
+  text("x1", p1*50, -20);
+  text("x2", p2*50, -20);
+  
+  // バネ
+  stroke(0);
+  strokeWeight(2);
+  drawSpring(p1*50, p2*50);
+  pop();
+  
+  // 下段：x1(t), x2(t) のグラフ
+  push();
+  translate(50, 300);
+  stroke(255,0,0);
+  noFill();
+  beginShape();
+  x1_list.push(p1);
+  t_list.push(t);
+  for (let i=0; i<x1_list.length; i++){
+    vertex(i*5, -x1_list[i]*50);
+  }
+  endShape();
+  
+  stroke(0,0,255);
+  noFill();
+  beginShape();
+  x2_list.push(p2);
+  for (let i=0; i<x2_list.length; i++){
+    vertex(i*5, -x2_list[i]*50);
+  }
+  endShape();
+  pop();
+  
+  t += dt;
 }
