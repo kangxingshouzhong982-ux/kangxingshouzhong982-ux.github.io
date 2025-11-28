@@ -2,9 +2,8 @@
 let mSlider, kSlider, v0Slider, LSlider;
 let m = 1.0, k = 1.0, v0 = 1.0, L = 1.0;
 
-let omega;
 let t = 0;
-let dt = 0.02;  // 小さくして速度を遅く
+let dt = 0.02;
 
 let x1_list = [];
 let x2_list = [];
@@ -42,7 +41,7 @@ function drawSpring(x_start, x_end, n=20, amp=15) {
 }
 
 function setup() {
-  createCanvas(1200, 500); // 横長に拡大
+  createCanvas(1400, 500); // 横長に拡大
   textSize(14);
   
   // スライダー作成
@@ -59,7 +58,7 @@ function setup() {
 function draw() {
   background(255);
   
-  // スライダーから値取得
+  // スライダー値取得
   m = mSlider.value();
   k = kSlider.value();
   v0 = v0Slider.value();
@@ -73,9 +72,9 @@ function draw() {
   text("初速度 v0 = " + v0, 160, 95);
   text("初期間隔 L = " + L, 160, 125);
   
-  let scale = 100; // 横スケールを大きく
+  let scale = 100; // 小球のスケール
   
-  // 上段：バネ＋小球
+  // --- 上段：バネ＋小球 ---
   push();
   translate(50, 150);
   let p1 = x1(t, v0, k, m) * scale;
@@ -99,27 +98,49 @@ function draw() {
   drawSpring(p1, p2);
   pop();
   
-  // 下段：x1(t), x2(t) のグラフ
+  // --- 下段：グラフ ---
+  let graphX = 50;
+  let graphY = 300; // 下段配置
+  let graphW = width - 100; // 横長
+  let graphH = 150;        // 高さ
+  let tScale = 5;          // x軸スケール
+  
   push();
-  translate(50, 350);
+  translate(graphX, graphY);
+  
+  // 軸描画
+  stroke(0);
+  strokeWeight(1);
+  line(0, 0, graphW, 0); // x軸
+  line(0, 0, 0, -graphH); // y軸
+  
+  // グラフ更新
+  x1_list.push(p1/scale);
+  x2_list.push(p2/scale);
+  t_list.push(t);
+  
+  // x1(t)
   stroke(255,0,0);
   noFill();
   beginShape();
-  x1_list.push(p1/scale);  // グラフはスケール無し
-  t_list.push(t);
   for (let i=0; i<x1_list.length; i++){
-    vertex(i*5, -x1_list[i]*scale);
+    let gx = i*tScale;
+    let gy = -x1_list[i]*scale;
+    vertex(gx, gy);
   }
   endShape();
   
+  // x2(t)
   stroke(0,0,255);
   noFill();
   beginShape();
-  x2_list.push(p2/scale);
   for (let i=0; i<x2_list.length; i++){
-    vertex(i*5, -x2_list[i]*scale);
+    let gx = i*tScale;
+    let gy = -x2_list[i]*scale;
+    vertex(gx, gy);
   }
   endShape();
+  
   pop();
   
   t += dt;
